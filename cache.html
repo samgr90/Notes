@@ -1,0 +1,16 @@
+// Open the cache for the specified site
+caches.open('https://example.com/').then(function(cache) {
+  // Get all the requests in the cache
+  cache.keys().then(function(requests) {
+    // Loop through each request and get its response
+    requests.forEach(function(request) {
+      cache.match(request).then(function(response) {
+        // Extract the data from the response and display it
+        response.text().then(function(data) {
+          console.log('Request URL:', request.url);
+          console.log('Response Data:', data);
+        });
+      });
+    });
+  });
+});
