@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Cache Viewer</title>
+</head>
+<body>
+  <input type="text" id="domainInput" placeholder="Enter domain name" />
+  <button onclick="viewCache()">View Cache</button>
+  <div id="cacheData"></div>
+
+  <script>
+    function viewCache() {
+      var domain = document.getElementById('domainInput').value;
+      if (domain === '') {
+        alert('Please enter a domain name.');
+        return;
+      }
+
+      caches.open(domain).then(function(cache) {
+        cache.keys().then(function(requests) {
+          var cacheData = document.getElementById('cacheData');
+          cacheData.innerHTML = '';
+
+          requests.forEach(function(request) {
+            cache.match(request).then(function(response) {
+              response.text().then(function(data) {
+                var div = document.createElement('div');
+                div.innerHTML = '<h3>' + request.url + '</h3>' + '<pre>' + data + '</pre>';
+                cacheData.appendChild(div);
+              });
+            });
+          });
+        });
+      });
+    }
+  </script>
+</body>
+</html>
