@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>XSS Prevention Example</title>
+  </head>
+  <body>
+    <h1>Enter your name:</h1>
+    <input type="text" id="name-input">
+    <button onclick="showName()">Submit</button>
+    <div id="name-output"></div>
+
+    <script>
+      function showName() {
+        const name = document.getElementById('name-input').value;
+        // Sanitize input by encoding HTML entities
+        const sanitizedName = encodeHTML(name);
+        // Output encoded value to the page
+        document.getElementById('name-output').innerHTML = sanitizedName;
+      }
+
+      function encodeHTML(text) {
+        const element = document.createElement('div');
+        element.innerText = text;
+        return element.innerHTML;
+      }
+    </script>
+  </body>
+</html>
