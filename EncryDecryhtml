@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AES Encryption/Decryption</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <script src="index.js"></script>
+</head>
+<body>
+  <h1>AES Encryption/Decryption</h1>
+  <form>
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password" required><br>
+
+    <label for="iv">IV:</label>
+    <input type="text" id="iv" name="iv" required><br>
+
+    <label for="mode">Mode:</label>
+    <select id="mode" name="mode" required>
+      <option value="CBC">CBC</option>
+      <option value="CTR">CTR</option>
+      <option value="CFB">CFB</option>
+      <option value="OFB">OFB</option>
+    </select><br>
+
+    <label for="padding">Padding:</label>
+    <select id="padding" name="padding" required>
+      <option value="Pkcs7">PKCS7</option>
+      <option value="Iso10126">ISO10126</option>
+      <option value="AnsiX923">ANSIX923</option>
+      <option value="Iso97971">ISO97971</option>
+      <option value="NoPadding">NoPadding</option>
+    </select><br>
+
+    <label for="data">Data:</label>
+    <textarea id="data" name="data" required></textarea><br>
+
+    <input type="button" value="Encrypt" onclick="encryptData()">
+    <input type="button" value="Decrypt" onclick="decryptData()">
+  </form>
+
+  <h2>Result:</h2>
+  <textarea id="result" readonly></textarea>
+</body>
+</html>
+
+<script> 
+function encryptData() {
+
+  const password = document.getElementById('password').value;
+  const iv = document.getElementById('iv').value;
+  const mode = document.getElementById('mode').value;
+  const padding = document.getElementById('padding').value;
+  const data = document.getElementById('data').value;
+
+  const key = CryptoJS.enc.Utf8.parse(password);
+  const ivHex = CryptoJS.enc.Hex.parse(iv);
+
+ 
+  const options = {
+    iv: ivHex,
+    mode: CryptoJS.mode[mode],
+    padding: CryptoJS.pad[padding]
+  };
+
+
+  const encrypted = CryptoJS.AES.encrypt(data, key, options);
+
+
+  document.getElementById('result').value = encrypted.toString();
+}
+
+function decryptData() {
+
+  const password = document.getElementById('password').value;
+  const iv = document.getElementById('iv').value;
+  const mode = document.getElementById('mode').value;
+  const padding = document.getElementById('padding').value;
+  const data = document.getElementById('data').value;
+
+
+  const key = CryptoJS.enc.Utf8.parse(password);
+  const ivHex = CryptoJS.enc.Hex.parse(iv);
+
+
+  const options = {
+    iv: ivHex,
+    mode: CryptoJS.mode[mode],
+    padding: CryptoJS.pad[padding]
+  };
+  
+  const decrypted = CryptoJS.AES.decrypt(data, key, options);
+
+
+  document.getElementById('result').value = decrypted.toString();
+
+</script>
