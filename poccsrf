@@ -1,0 +1,6 @@
+            string sd = context.Request.Form["Data"];
+            var sdd = context.Request.Cookies["__RequestVerificationToken"];
+            string r = "__RequestVerificationToken=\"" + sdd.Value + "\"";
+            AntiForgery.Validate();
+            //AntiForgery.Validate("__RequestVerificationToken=\"2mSed2_l7XtbpARGE2bXXx9_PoouaIuQcO2S-7Gxm2CmA5UVVnouxmNtgvQ41HmmZWXz3FjmEJ7TvVU5DLUs8zyZRs4bwupIBbpxgJ89eno1\"","26KtbhxrMrDmx0vjyUAb1v20wnecZxMl8HKs4uQ3aJ3UHp0Ek_yj3x-p7eFHSgDEbD4Alrak-qo3LZSe2BaVzTsIPJ_tEKQZypG_S9nPN501");
+            context.Response.ContentType="application/json";
