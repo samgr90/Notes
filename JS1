@@ -1,0 +1,24 @@
+window.onload = async function() {
+  try {
+    const apiUrl1 = 'https://api.example.com/data1';
+    const apiUrl2 = 'https://api.example.com/data2';
+
+    const response1 = await fetch(apiUrl1);
+    if (!response1.ok) {
+      throw new Error(`Failed to fetch data from API 1: ${response1.status} ${response1.statusText}`);
+    }
+    const data1 = await response1.json();
+    console.log('Data from API 1:', data1);
+
+    const response2 = await fetch(apiUrl2);
+    if (!response2.ok) {
+      throw new Error(`Failed to fetch data from API 2: ${response2.status} ${response2.statusText}`);
+    }
+    const data2 = await response2.json();
+    console.log('Data from API 2:', data2);
+
+    // You can now work with data1 and data2 here
+  } catch (error) {
+    console.error('An error occurred:', error);
+  }
+};
