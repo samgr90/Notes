@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cookie Decoder</title>
+</head>
+<body>
+    <h1>Cookie Decoder</h1>
+    
+    <label for="cookieInput">Encoded Cookie String:</label>
+    <input type="text" id="cookieInput" placeholder="Enter encoded cookie string">
+    
+    <br>
+    
+    <button onclick="decodeAndDisplayCookies()">Decode Cookies</button>
+
+    <div id="decodedOutput"></div>
+    <div id="cookiesOutput"></div>
+
+    <script>
+        function decodeAndDisplayCookies() {
+            const cookieInput = document.getElementById("cookieInput").value;
+
+            // Decode the encoded cookie string
+            const decodedCookieString = decodeURIComponent(cookieInput);
+
+            // Display the decoded cookie string
+            const decodedOutputDiv = document.getElementById("decodedOutput");
+            decodedOutputDiv.innerHTML = `Decoded URI Component: ${decodedCookieString}<br><br>`;
+
+            // Split the decoded string into individual cookies
+            const cookies = decodedCookieString.split(';');
+
+            // Display each cookie in the specified format
+            const cookiesOutputDiv = document.getElementById("cookiesOutput");
+            cookiesOutputDiv.innerHTML = "";
+
+            cookies.forEach(cookie => {
+                cookiesOutputDiv.innerHTML += `Set-Cookie: ${cookie.trim()}<br>`;
+            });
+        }
+    </script>
+</body>
+</html>
