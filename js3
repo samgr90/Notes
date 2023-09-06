@@ -1,0 +1,15 @@
+// Make a fetch request
+fetch('https://api.example.com/data')
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
+    }
+    return response.text(); // You can use .json() for JSON data
+  })
+  .then(data => {
+    // Display the response data in an alert
+    alert(data);
+  })
+  .catch(error => {
+    console.error('An error occurred:', error);
+  });
