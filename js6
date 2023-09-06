@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cookie Setter & URL Caller</title>
+</head>
+<body>
+    <h1>Cookie Setter & URL Caller</h1>
+    
+    <label for="cookieInput">Encoded Cookie String:</label>
+    <input type="text" id="cookieInput" placeholder="Enter encoded cookie string">
+    
+    <br>
+    
+    <label for="urlInput">URL to Call:</label>
+    <input type="text" id="urlInput" placeholder="Enter URL to call">
+    
+    <br>
+    
+    <button onclick="setCookiesAndCallUrl()">Set Cookies & Call URL</button>
+    
+    <script>
+        function setCookiesAndCallUrl() {
+            const cookieInput = document.getElementById("cookieInput").value;
+            const urlInput = document.getElementById("urlInput").value;
+
+            // Decode the encoded cookie string
+            const decodedCookieString = decodeURIComponent(cookieInput);
+
+            // Split the decoded string into individual cookies
+            const cookies = decodedCookieString.split(';');
+
+            // Initialize an empty object to store the cookies
+            const cookieObj = {};
+
+            // Loop through the cookies and set each one in the cookieObj
+            cookies.forEach(cookie => {
+                const [name, value] = cookie.trim().split('=');
+                cookieObj[name] = value;
+            });
+
+            // Convert the cookieObj into a string for the Cookie header
+            const cookieHeader = Object.entries(cookieObj)
+                .map(([name, value]) => `${encodeURIComponent(name)}=${encodeURIComponent(value)}`)
+                .join('; ');
+
+            // Make a request to the user-provided URL with the cookies in the request header
+            fetch(urlInput, {
+                headers: {
+                    'Cookie': cookieHeader // Add the cookies to the header
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    console.log('Data from the URL:', data);
+                })
+                .catch(error => {
+                    console.error('An error occurred:', error);
+                });
+        }
+    </script>
+</body>
+</html>
