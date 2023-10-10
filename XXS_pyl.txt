@@ -58,4 +58,5 @@ $
  $
 
 https://bugbaba.blogspot.com/2017/08/xss-because-of-wrong-content-type-header.html 
+https://medium.com/@armaanpathan/exploiting-dom-based-xss-via-misconfigured-postmessage-function-bfc794969a0a 
 
