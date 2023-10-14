@@ -70,3 +70,4 @@ https://infosecwriteups.com/chaining-self-xss-with-ui-redressing-is-leading-to-s
   document.body.appendChild(script);
 </script>
 
+"autofocus onfocusin=alert(1) //
