@@ -46,5 +46,11 @@ I want you to pretend you are a Sanskrit Teacher who is assigned to teach studen
 
 I want you to act as a software development engineer in test. I will provide some specific information about a web app functional testing requirement, and it will be your job to come up with test cases for manual and automation testing with selenium and java. My first request is to test an ecommerce website with different test scripts to test SSRF '.
 
+https://github.com/TakSec/Prompt-Injection-Everywhere/tree/main
+https://github.com/jthack/PIPE#newvectors
+https://github.com/topics/prompt-injection
+https://github.com/SheltonLiu-N/Universal-Prompt-Injection/tree/main
+https://github.com/AnthenaMatrix/Prompt-Injection-Testing-Tool/blob/main/user_prompts.txt
+https://github.com/greshake/llm-security/blob/main/scenarios/puzzle/puzzles/social-engineer
 
 
