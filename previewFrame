@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File to Base64 and Vice Versa</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.3.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <h2>Convert PDF/Image to Base64</h2>
+    <input type="file" id="fileInput" accept="application/pdf, image/*">
+    <button onclick="convertFileToBase64()">Convert to Base64</button>
+    <textarea id="base64Output" rows="10" cols="50" readonly></textarea>
+
+    <h2>Preview File</h2>
+    <div id="previewContainer">
+        <iframe id="previewFrame" style="width:100%; height:400px; display:none;"></iframe>
+        <img id="previewImage" style="width:100%; height:400px; display:none;"/>
+    </div>
+
+    <h2>Convert Base64 to PDF/Image</h2>
+    <textarea id="base64Input" rows="10" cols="50"></textarea>
+    <button onclick="convertBase64ToFile()">Convert to File</button>
+    <a id="downloadLink" style="display:none">Download File</a>
+
+    <h2>Convert Image to PDF</h2>
+    <button onclick="convertImageToPDF()">Convert Image to PDF</button>
+
+    <script>
+    // Function to convert file (PDF/Image) to Base64
+    function convertFileToBase64() {
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
+
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64String = e.target.result.split(',')[1];
+                document.getElementById('base64Output').value = base64String;
+
+                // Preview the file
+                previewFile(e.target.result, file.type);
+            };
+            reader.readAsDataURL(file);
+        } else {
+            alert("Please select a PDF or image file.");
+        }
+    }
+
+    // Function to convert Base64 to file (PDF/Image)
+    function convertBase64ToFile() {
+        const base64String = document.getElementById('base64Input').value;
+
+        if (base64String) {
+            const mimeType = getMimeType(base64String);
+            const byteCharacters = atob(base64String);
+            const byteNumbers = new Array(byteCharacters.length);
+
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: mimeType });
+
+            const link = document.getElementById('downloadLink');
+            link.href = URL.createObjectURL(blob);
+            link.download = mimeType.includes('pdf') ? 'converted.pdf' : 'converted_image.' + mimeType.split('/')[1];
+            link.style.display = 'block';
+            link.innerHTML = 'Download File';
+
+            // Preview the converted file
+            previewFile(link.href, mimeType);
+        } else {
+            alert("Please enter a Base64 string.");
+        }
+    }
+
+    // Function to guess MIME type based on Base64 string
+    function getMimeType(base64String) {
+        if (base64String.startsWith('/9j/')) {
+            return 'image/jpeg';
+        } else if (base64String.startsWith('iVBORw0KGgo')) {
+            return 'image/png';
+        } else if (base64String.startsWith('JVBERi0')) {
+            return 'application/pdf';
+        } else {
+            return 'application/octet-stream';
+        }
+    }
+
+    // Function to preview file
+    function previewFile(fileUrl, mimeType) {
+        const previewFrame = document.getElementById('previewFrame');
+        const previewImage = document.getElementById('previewImage');
+
+        if (mimeType.includes('pdf')) {
+            previewFrame.src = fileUrl;
+            previewFrame.style.display = 'block';
+            previewImage.style.display = 'none';
+        } else if (mimeType.includes('image')) {
+            previewImage.src = fileUrl;
+            previewImage.style.display = 'block';
+            previewFrame.style.display = 'none';
+        } else {
+            previewFrame.style.display = 'none';
+            previewImage.style.display = 'none';
+        }
+    }
+
+    // Function to convert an image to PDF
+    async function convertImageToPDF() {
+        const { jsPDF } = window.jspdf;
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
+
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const imgData = e.target.result;
+                const pdf = new jsPDF();
+
+                // Load the image to get its dimensions
+                const img = new Image();
+                img.src = imgData;
+                img.onload = function() {
+                    const imgWidth = img.width;
+                    const imgHeight = img.height;
+
+                    // Calculate dimensions to fit the image inside the PDF
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = pdf.internal.pageSize.getHeight();
+                    const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+                    const width = imgWidth * ratio;
+                    const height = imgHeight * ratio;
+
+                    // Add the image to the PDF
+                    pdf.addImage(imgData, 'JPEG', 10, 10, width, height);
+                    const pdfBase64 = pdf.output('datauristring').split(',')[1];
+
+                    document.getElementById('base64Output').value = pdfBase64;
+
+                    // Preview the PDF
+                    const pdfBlob = new Blob([Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0))], { type: 'application/pdf' });
+                    const pdfUrl = URL.createObjectURL(pdfBlob);
+                    previewFile(pdfUrl, 'application/pdf');
+
+                    // Set download link
+                    const link = document.getElementById('downloadLink');
+                    link.href = pdfUrl;
+                    link.download = 'converted_from_image.pdf';
+                    link.style.display = 'block';
+                    link.innerHTML = 'Download PDF';
+                };
+            };
+            reader.readAsDataURL(file);
+        } else {
+            alert("Please select an image file.");
+        }
+    }
+    </script>
+</body>
+</html>
