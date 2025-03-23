@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HMAC Hash Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        textarea, input, button { width: 100%; margin-top: 10px; padding: 10px; }
+        button { cursor: pointer; background: #007bff; color: white; border: none; }
+        button:hover { background: #0056b3; }
+        #output { background: #f4f4f4; padding: 10px; margin-top: 10px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+
+    <h2>HMAC Signature Generator</h2>
+    <label for="requestInput">Enter Request:</label>
+    <textarea id="requestInput" rows="5" placeholder="POST /api/secure-endpoint&#10;Host: example.com"></textarea>
+
+    <button onclick="generateSignature()">Generate HMAC</button>
+
+    <h3>Output:</h3>
+    <div id="output"></div>
+
+    <script>
+        let secretKey = "";
+
+        function generateSignature() {
+            let requestText = document.getElementById("requestInput").value.trim();
+            if (!requestText) {
+                alert("Please enter a request.");
+                return;
+            }
+
+            let timestamp = Math.floor(Date.now() / 1000); // Current UNIX timestamp
+            let devToolsStatus = detectDevTools() ? "true" : "false";
+
+            // Generate HMAC Signature
+            let hmacSignature = createHmacSignature(requestText);
+
+            let output = `${requestText}
+X-HMAC-Signature: ${hmacSignature}
+X-HMAC-Timestamp: ${timestamp}
+X-DOMChanges Detected: "false"`;
+
+            document.getElementById("output").innerText = output;
+        }
+
+        function createHmacSignature(data) {
+            let key = CryptoJS.enc.Base64.parse(secretKey);
+            let hmacHash = CryptoJS.HmacSHA256(data, key);
+            return CryptoJS.enc.Base64.stringify(hmacHash);
+        }
+
+        
+        }
+    </script>
+
+</body>
+</html>
