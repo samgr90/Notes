@@ -1,0 +1,102 @@
+import requests
+import time
+
+# === CONFIGURATION ===
+BLACKDUCK_URL = "https://your-blackduck-instance.com"
+API_TOKEN = "your_blackduck_api_token"
+
+# These must be set to your actual project/version names
+PROJECT_NAME = "your_project_name"
+VERSION_NAME = "your_version_name"
+
+HEADERS = {
+    "Authorization": f"token {API_TOKEN}",
+    "Accept": "application/json"
+}
+
+def get_project_version_url():
+    # Get project
+    proj_url = f"{BLACKDUCK_URL}/api/projects?q=name:{PROJECT_NAME}"
+    proj_resp = requests.get(proj_url, headers=HEADERS)
+    proj_resp.raise_for_status()
+    proj_items = proj_resp.json().get("items", [])
+    if not proj_items:
+        raise Exception("Project not found.")
+    project = proj_items[0]
+
+    # Get version
+    version_url = project["_meta"]["links"]["versions"]["href"]
+    ver_resp = requests.get(version_url, headers=HEADERS)
+    ver_resp.raise_for_status()
+    version_items = ver_resp.json().get("items", [])
+    for ver in version_items:
+        if ver["versionName"] == VERSION_NAME:
+            return ver["_meta"]["href"]
+    raise Exception("Version not found.")
+
+def generate_pdf_report(project_version_url):
+    report_url = f"{BLACKDUCK_URL}/api/reports"
+    payload = {
+        "reportFormat": "PDF",
+        "reportType": "VERSION_VULNERABILITY",
+        "projectVersion": project_version_url
+    }
+
+    resp = requests.post(report_url, headers=HEADERS, json=payload)
+    resp.raise_for_status()
+    return resp.headers["Location"]
+
+def wait_and_download_report(report_job_url):
+    print("Waiting for report to be generated...")
+    while True:
+        status_resp = requests.get(report_job_url, headers=HEADERS)
+        status_resp.raise_for_status()
+        status_data = status_resp.json()
+
+        if status_data["status"] == "COMPLETED":
+            file_url = status_data.get("fileUrl")
+            if file_url:
+                file_resp = requests.get(file_url, headers=HEADERS)
+                with open("blackduck_report.pdf", "wb") as f:
+                    f.write(file_resp.content)
+                print("✅ PDF Report downloaded: blackduck_report.pdf")
+                return
+        elif status_data["status"] == "FAILED":
+            raise Exception("Report generation failed.")
+        time.sleep(5)
+
+def get_vulnerability_summary(project_version_url):
+    vuln_url = f"{project_version_url}/vulnerable-components"
+    severity_count = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0}
+
+    while vuln_url:
+        resp = requests.get(vuln_url, headers=HEADERS)
+        resp.raise_for_status()
+        data = resp.json()
+        for item in data.get("items", []):
+            severity = item.get("securityRiskSeverity")
+            if severity in severity_count:
+                severity_count[severity] += 1
+        vuln_url = data.get("next")
+
+    with open("vulnerability_summary.txt", "w") as f:
+        for sev in ["CRITICAL", "HIGH", "MEDIUM"]:
+            f.write(f"{sev}: {severity_count[sev]}\n")
+    print("✅ Vulnerability counts written to: vulnerability_summary.txt")
+
+if __name__ == "__main__":
+    try:
+        print("🔍 Fetching project version...")
+        project_version_url = get_project_version_url()
+
+        print("📄 Generating report...")
+        report_job_url = generate_pdf_report(project_version_url)
+
+        print("⬇️  Downloading PDF report...")
+        wait_and_download_report(report_job_url)
+
+        print("📊 Collecting vulnerability summary...")
+        get_vulnerability_summary(project_version_url)
+
+    except Exception as e:
+        print(f"❌ Error: {e}")
