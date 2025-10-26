@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>360 Viewer with Sidebar Modal</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+
+    <style>
+        /* General Body Styles */
+        body {
+            text-align: center;
+            padding-top: 50px;
+            font-family: sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        hr {
+            border: 0;
+            height: 1px;
+            background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+            margin-bottom: 30px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 1000; /* High z-index to ensure it's on top */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Hide scrollbars if content overflows */
+            background-color: rgba(0,0,0,0.8); /* Dark overlay */
+            box-sizing: border-box; /* Include padding and border in element's total width and height */
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 20px auto; /* Margin from top/bottom, centered horizontally */
+            width: 90%; /* Adjust width as needed */
+            max-width: 1200px; /* Max width for larger screens */
+            height: calc(100% - 40px); /* Fill most of the viewport height */
+            display: flex; /* Use flexbox for sidebar layout */
+            border-radius: 8px;
+            overflow: hidden; /* Crucial for rounded corners and containing child overflows */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        /* Close Button */
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            color: #fff; /* White for better visibility against dark overlay */
+            font-size: 36px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1001; /* Above modal content */
+            text-shadow: 0 0 5px rgba(0,0,0,0.7);
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: #bbb;
+        }
+
+        /* Sidebar Styles */
+        .modal-sidebar {
+            width: 80px; /* Fixed width for the sidebar */
+            background-color: rgba(0, 0, 0, 0.7); /* Dark semi-transparent background */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 0;
+            box-sizing: border-box;
+            color: white; /* Default text color for sidebar items */
+            position: relative; /* For absolute positioning of some items if needed */
+        }
+
+        .sidebar-item {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(255, 255, 255, 0.15); /* Slightly transparent white circles */
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px; /* Spacing between items */
+            font-size: 1.2em; /* Icon size */
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            color: white; /* Icon color */
+            font-weight: bold;
+            text-align: center;
+            position: relative; /* For inner elements like weather */
+            flex-shrink: 0; /* Prevent items from shrinking */
+        }
+
+        .sidebar-item:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Specific sidebar item styles based on the image */
+        .sidebar-item.weather {
+            background-color: transparent; /* No background for weather */
+            flex-direction: column;
+            height: auto;
+            margin-bottom: 25px;
+            cursor: default;
+        }
+
+        .sidebar-item.weather .icon {
+            font-size: 2em; /* Larger cloud icon */
+            margin-bottom: 5px;
+        }
+
+        .sidebar-item.weather .temp {
+            font-size: 1.2em;
+        }
+
+        .sidebar-item.weather .wind {
+            font-size: 0.8em;
+        }
+
+        .sidebar-item.compass {
+            background-color: white; /* White background for compass */
+            color: #333;
+            font-size: 3em;
+            display: grid; /* For overlapping N/S/E/W */
+            place-items: center;
+        }
+
+        .compass-N { position: absolute; top: 5px; font-size: 0.5em;}
+        .compass-E { position: absolute; right: 5px; font-size: 0.5em;}
+        .compass-S { position: absolute; bottom: 5px; font-size: 0.5em;}
+        .compass-W { position: absolute; left: 5px; font-size: 0.5em;}
+        .compass-center { font-size: 1.5em; font-weight: bold; } /* This would be the actual compass needle */
+
+
+        /* Modal Main Content (for Pannellum) */
+        .modal-main-content {
+            flex-grow: 1; /* Takes up remaining space */
+            background-color: #333; /* Dark background for the viewer area */
+            position: relative; /* For absolute positioning of viewer */
+            display: flex; /* To contain the panorama-container */
+            justify-content: center;
+            align-items: center;
+            color: white; /* Default text color for main content */
+        }
+
+        #panorama-container {
+            width: 100%;
+            height: 100%;
+            background-color: black; /* Pannellum will render over this */
+            display: flex; /* Helps ensure fill */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .overlay-text {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            background-color: rgba(0,0,0,0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            z-index: 10; /* Ensure it's above the pannellum viewer */
+        }
+
+        .top-left-info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background-color: rgba(0,0,0,0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 1em;
+            z-index: 10;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>Pannellum 360 Viewer with Enhanced Modal</h1>
+    <hr>
+    <button id="openModalBtn">View 360 Image</button>
+
+    <div id="viewerModal" class="modal">
+        <span class="close-button">&times;</span>
+
+        <div class="modal-content">
+            <div class="modal-sidebar">
+                <div class="sidebar-item weather">
+                    <div class="icon">☁️</div>
+                    <div class="temp">-2°C</div>
+                    <div class="wind">6 km/h WNW</div>
+                </div>
+
+                <div class="sidebar-item compass">
+                    <span class="compass-N">N</span>
+                    <span class="compass-E">E</span>
+                    <span class="compass-S">S</span>
+                    <span class="compass-W">W</span>
+                    <span class="compass-center">🧭</span> </div>
+
+                <div class="sidebar-item">+</div>
+                <div class="sidebar-item">-</div>
+
+                <div class="sidebar-item">EN</div>
+
+                <div class="sidebar-item">§</div>
+
+                <div class="sidebar-item">i</div>
+
+                <div class="sidebar-item">🗺️</div>
+
+                <div class="sidebar-item">📅</div>
+
+                <div class="sidebar-item">↔️</div>
+
+                <div class="sidebar-item">🕒</div>
+
+                <div class="sidebar-item">⬆️</div>
+            </div>
+
+            <div class="modal-main-content">
+                <div class="top-left-info">Eiger 3970m 13025ft</div>
+
+                <div id="panorama-container">
+                    </div>
+
+                <div class="overlay-text">
+                    roundshot<br>
+                    <small>SMART IMAGE TECHNOLOGY</small><br>
+                    Edelweiss *** Superior, 3825 Mürren, Switzerland
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('viewerModal');
+        const btn = document.getElementById('openModalBtn');
+        const closeButton = document.getElementsByClassName('close-button')[0];
+        let viewer = null; // Variable to hold the Pannellum viewer instance
+
+        // When the user clicks the button, open the modal and initialize Pannellum
+        btn.onclick = function() {
+            modal.style.display = "block";
+            // Initialize Pannellum after the container is visible (otherwise it won't render correctly)
+            if (viewer === null) {
+                viewer = pannellum.viewer('panorama-container', {
+                    "type": "equirectangular",
+                    "panorama": "https://pannellum.org/images/alma.jpg", // Use a publicly available image
+                    "autoLoad": true,
+                    "autoRotate": -2, // Optional: start rotating slowly
+                    "showZoom": false, // Hide default Pannellum zoom controls if sidebar controls are used
+                    "showControls": false, // Hide other default Pannellum controls
+                });
+            } else {
+                // If already initialized, ensure viewer is resized if needed
+                viewer.resize();
+            }
+        }
+
+        // When the user clicks on <span> (x), close the modal
+        closeButton.onclick = function() {
+            modal.style.display = "none";
+            // Optional: stop auto-rotation or destroy/reset viewer if needed
+            if (viewer) {
+                // viewer.pauseAutoRotate(); // If you want to stop rotation
+                // viewer.destroy(); // If you want to completely reinitialize each time
+            }
+        }
+
+        // When the user clicks anywhere outside of the modal content, close it
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        // Optional: Add functionality to sidebar items (e.g., zoom)
+        document.querySelector('.sidebar-item:nth-of-type(3)').onclick = function() { // + button
+            if (viewer) viewer.setHfov(viewer.getHfov() - 10);
+        };
+        document.querySelector('.sidebar-item:nth-of-type(4)').onclick = function() { // - button
+            if (viewer) viewer.setHfov(viewer.getHfov() + 10);
+        };
+
+        // You would add similar event listeners for other sidebar items to make them functional
+        // For example:
+        // document.querySelector('.sidebar-item.map').onclick = function() { alert('Map clicked!'); };
+
+    </script>
+
+</body>
+</html>
