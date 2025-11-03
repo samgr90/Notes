@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pannellum Hotspot Config Generator</title>
+    <style>
+        /* Basic CSS for the tool */
+        body { font-family: sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
+        h1 { border-bottom: 2px solid #ccc; padding-bottom: 10px; }
+        #image-container {
+            position: relative;
+            cursor: crosshair;
+            border: 2px dashed #ccc;
+            margin: 20px 0;
+            background-color: #f9f9f9;
+        }
+        #interactive-image {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+        .hotspot-marker {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #FF5722;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 10;
+        }
+        input[type="text"] { padding: 8px; border: 1px solid #ddd; width: 70%; }
+        button { padding: 8px 15px; cursor: pointer; background-color: #4CAF50; color: white; border: none; border-radius: 4px; margin-right: 10px; }
+        button:hover { background-color: #45a049; }
+        #config-output { background-color: #eee; padding: 15px; white-space: pre; overflow-x: auto; border-radius: 4px; }
+        #hotspot-list { border: 1px solid #ddd; padding: 10px; margin-top: 10px; max-height: 200px; overflow-y: auto; }
+        .hotspot-item { margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px dotted #eee; }
+    </style>
+</head>
+<body>
+    <h1>🌍 Pannellum Hotspot Config Generator</h1>
+
+    <p>1. Paste your 360° image URL and click **Load Image**.</p>
+    <input type="text" id="imageUrl" value="https://pannellum.org/images/alma.jpg" size="50">
+    <button onclick="loadImage()">Load Image</button>
+
+    <p>2. Click on the image where you want to place a hotspot.</p>
+    <div id="image-container">
+        <img id="interactive-image" src="" alt="Loaded 360 Panorama" style="display:none;">
+    </div>
+
+    <h2>Hotspot Data List</h2>
+    <div id="hotspot-list">
+        <p style="color: #666;">Click on the image to add hotspots.</p>
+    </div>
+
+    <h2>Generated `config.json`</h2>
+    <button onclick="generateConfig()">Generate JSON</button>
+    <button onclick="copyConfig()">Copy JSON</button>
+    <pre id="config-output">The generated config will appear here.</pre>
+
+    <script src="script.js"></script>
+</body>
+</html>
