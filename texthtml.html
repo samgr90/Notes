@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pannellum Hotspot Generator</title>
+    <!-- Load Tailwind CSS for development prototyping (CDN is non-production ready) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the responsive preview and tool area */
+        body { font-family: "Inter", sans-serif; background-color: #f4f7f9; }
+        .hotspot-marker {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background-color: #EF4444; /* Tailwind red-500 */
+            border: 3px solid #F9FAFB; /* Tailwind white/gray */
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 10;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+        #image-container {
+            position: relative;
+            cursor: crosshair;
+            border: 2px solid #D1D5DB; /* Tailwind gray-300 */
+            min-height: 200px;
+            background-color: #e5e7eb; /* Tailwind gray-200 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+        #interactive-image {
+            display: none;
+            width: 100%;
+            height: auto;
+        }
+        /* Modal Backdrop */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            width: 90%;
+            max-width: 1000px;
+            max-height: 90vh;
+            overflow: hidden;
+            position: relative;
+        }
+        #pannellum-preview-container {
+            width: 100%;
+            /* Fixed aspect ratio for responsive viewing */
+            aspect-ratio: 16 / 9; 
+            height: 50vh; 
+        }
+    </style>
+    <!-- Load Pannellum CSS and JS here for the direct preview -->
+    <link rel="stylesheet" id="pannellumCss" href="https://cdn.pannellum.org/2.5/pannellum.css">
+    <script id="pannellumJs" src="https://cdn.pannellum.org/2.5/pannellum.js"></script>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow-2xl">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-2">Pannellum Hotspot Configurator 🌐</h1>
+        
+        <!-- Configuration and URLs -->
+        <div class="grid md:grid-cols-2 gap-4 mb-6">
+            <div class="col-span-2">
+                <label for="configUrl" class="block text-sm font-medium text-gray-700">Config.json Hosting URL (Needed for *Exported* Iframe Code)</label>
+                <input type="url" id="configUrl" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., https://my-host.com/config.json">
+            </div>
+            
+            <!-- Restored URL Inputs (Used by Iframe Generator only) -->
+            <div>
+                <label for="jsUrl" class="block text-sm font-medium text-gray-700">Pannellum JS URL (Optional)</label>
+                <input type="url" id="jsUrl" value="https://cdn.pannellum.org/2.5/pannellum.js" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="e.g., https://cdn.pannellum.org/2.5/pannellum.js">
+            </div>
+            <div>
+                <label for="cssUrl" class="block text-sm font-medium text-gray-700">Pannellum CSS URL (Optional)</label>
+                <input type="url" id="cssUrl" value="https://cdn.pannellum.org/2.5/pannellum.css" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="e.g., https://cdn.pannellum.org/2.5/pannellum.css">
+            </div>
+            <div>
+                <label for="htmUrl" class="block text-sm font-medium text-gray-700">Pannellum HTM URL (Optional)</label>
+                <input type="url" id="htmUrl" value="https://cdn.pannellum.org/2.5/pannellum.htm" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="e.g., https://cdn.pannellum.org/2.5/pannellum.htm">
+            </div>
+            <!-- End Restored URL Inputs -->
+
+            <div class="col-span-2">
+                <label for="masterImageUrl" class="block text-sm font-medium text-gray-700">Master Image URL (Scene 1)</label>
+                <input type="url" id="masterImageUrl" value="https://pannellum.org/images/alma.jpg" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="Start image URL (equirectangular)">
+            </div>
+        </div>
+        
+        <button onclick="loadMasterScene()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 shadow-md">
+            1. Load Master Scene
+        </button>
+
+        <!-- Image Interaction Area -->
+        <h2 class="text-xl font-semibold text-gray-800 mt-8 mb-4">2. Hotspot Placement (Current Scene: <span id="currentSceneId" class="text-red-500 font-bold">scene1</span>)</h2>
+        <div id="image-container" class="relative overflow-hidden aspect-video border-2 border-dashed border-gray-400">
+            <img id="interactive-image" src="" alt="360 Panorama Preview" class="transition-opacity duration-300" style="opacity: 0;">
+        </div>
+
+        <!-- Hotspot and Scene Management -->
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">3. Scene and Hotspot Configuration</h2>
+        <div id="scene-hotspot-manager" class="space-y-4 p-4 bg-gray-50 rounded-lg">
+            <!-- Dynamic Scene List and Hotspot Details will be rendered here -->
+            <p id="scene-placeholder" class="text-gray-500">No scenes loaded yet.</p>
+        </div>
+
+        <!-- Output and Actions -->
+        <h2 class="text-xl font-semibold text-gray-800 mt-8 mb-4">4. Final Output and Actions</h2>
+        <div class="flex flex-wrap gap-3 mb-6">
+            <button onclick="generateConfig()" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150">
+                Generate config.json
+            </button>
+            <button onclick="downloadConfig()" class="bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150">
+                Download config.json
+            </button>
+            <button onclick="showPreviewModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150">
+                Live Preview
+            </button>
+            <button onclick="showIframeCode()" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150">
+                Generate Iframe Code
+            </button>
+            <button onclick="resetAllSettings()" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150">
+                Reset All Settings
+            </button>
+        </div>
+        
+        <pre id="config-output" class="bg-gray-800 text-green-300 p-4 rounded-lg text-sm overflow-x-auto min-h-[100px]">Click 'Generate JSON' to see the configuration here.</pre>
+        <div id="iframe-output-container" class="mt-4 hidden">
+            <h3 class="font-medium text-gray-700 mb-2">Iframe Embed Code (Requires Hosting config.json)</h3>
+            <textarea id="iframe-output" rows="4" readonly class="w-full p-2 border border-gray-300 rounded-md bg-gray-50 text-sm"></textarea>
+            <button onclick="copyIframeCode()" class="mt-2 bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded-md text-sm">Copy Code</button>
+        </div>
+    </div>
+    
+    <!-- Modal for Scene Link Configuration -->
+    <div id="hotspot-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 class="text-2xl font-semibold mb-4 text-gray-800">Configure Hotspot Link</h3>
+            
+            <div id="hotspot-link-content" class="space-y-4">
+                <div class="flex items-center space-x-4">
+                    <label class="font-medium text-gray-700">Current Scene:</label>
+                    <span id="modal-source-scene" class="font-bold text-blue-600"></span>
+                </div>
+
+                <div>
+                    <label for="hotspot-text" class="block text-sm font-medium text-gray-700">Hotspot Text (Display Name)</label>
+                    <input type="text" id="hotspot-text" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" value="Go to next location">
+                </div>
+
+                <div>
+                    <label for="target-action" class="block text-sm font-medium text-gray-700">Target Scene Action</label>
+                    <select id="target-action" onchange="toggleNewSceneInput(this.value)" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        <option value="new">Link to New Scene (New Image)</option>
+                        <option value="existing">Link to Existing Scene</option>
+                    </select>
+                </div>
+
+                <div id="new-scene-fields" class="space-y-4 border p-3 rounded-md bg-yellow-50">
+                    <label for="new-scene-url" class="block text-sm font-medium text-gray-700">New Target Image URL</label>
+                    <input type="url" id="new-scene-url" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="URL for the new 360 image">
+                </div>
+                
+                <div id="existing-scene-fields" class="space-y-4 border p-3 rounded-md bg-green-50 hidden">
+                    <label for="existing-scene-select" class="block text-sm font-medium text-gray-700">Select Existing Target Scene</label>
+                    <select id="existing-scene-select" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></select>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end space-x-3">
+                <button onclick="closeHotspotModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-150">Cancel</button>
+                <button onclick="saveHotspot()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-150">Save Hotspot</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for Preview using Direct Pannellum Initialization -->
+    <div id="preview-modal" class="modal-overlay">
+        <div class="modal-content !max-w-4xl">
+            <h3 class="text-2xl font-semibold mb-4 text-gray-800">Pannellum Live Preview</h3>
+            <p class="text-sm text-gray-500 mb-4">This embedded viewer runs directly from your generated configuration, allowing you to test the scene links and hotspots.</p>
+            
+            <div id="pannellum-preview-container" class="relative">
+                <!-- Pannellum viewer will be initialized here -->
+                <div id="pannellum-viewer" style="width:100%; height:100%;"></div>
+            </div>
+            
+            <div class="mt-6 flex justify-end">
+                <button onclick="closePreviewModal()" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-150">Close Preview</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // --- Application State Management ---
+        const appState = {
+            scenes: {},
+            currentSceneId: 'scene1',
+            lastClickCoords: null, // {x: number, y: number, yaw: number, pitch: number}
+            configUrl: '',
+            pannellumViewer: null // Instance of the Pannellum viewer
+        };
+
+        const dom = {
+            imgContainer: document.getElementById('image-container'),
+            interactiveImg: document.getElementById('interactive-image'),
+            sceneManager: document.getElementById('scene-hotspot-manager'),
+            currentSceneIdSpan: document.getElementById('currentSceneId'),
+            hotspotModal: document.getElementById('hotspot-modal'),
+            modalSourceScene: document.getElementById('modal-source-scene'),
+            existingSceneSelect: document.getElementById('existing-scene-select'),
+            newSceneFields: document.getElementById('new-scene-fields'),
+            existingSceneFields: document.getElementById('existing-scene-fields'),
+            previewModal: document.getElementById('preview-modal'),
+            pannellumViewerDiv: document.getElementById('pannellum-viewer'),
+            iframeOutput: document.getElementById('iframe-output'),
+            iframeOutputContainer: document.getElementById('iframe-output-container'),
+            configOutput: document.getElementById('config-output'),
+            htmUrlInput: document.getElementById('htmUrl'),
+        };
+        
+        // --- Utility Functions ---
+
+        /**
+         * Sets the image container to the initial state, showing the placeholder text.
+         */
+        function showImagePlaceholder(message = 'Image will load here. Click to define hotspots. Load a master scene first.') {
+            dom.interactiveImg.style.display = 'none'; // Hide the image
+            dom.imgContainer.classList.add('flex', 'items-center', 'justify-center');
+            
+            // Remove existing placeholder text
+            dom.imgContainer.querySelector('.placeholder-text')?.remove();
+
+            // Add new placeholder text
+            const p = document.createElement('p');
+            p.className = 'text-gray-500 placeholder-text';
+            p.textContent = message;
+            dom.imgContainer.appendChild(p);
+        }
+
+        // --- Core Scene and Hotspot Logic ---
+
+        function loadMasterScene() {
+            const masterUrl = document.getElementById('masterImageUrl').value.trim();
+            appState.configUrl = document.getElementById('configUrl').value.trim();
+
+            if (!masterUrl) {
+                console.error("Please provide the Master Image URL."); 
+                return;
+            }
+
+            // Reset state for a new session
+            appState.scenes = {};
+            appState.currentSceneId = 'scene1';
+
+            appState.scenes['scene1'] = {
+                id: 'scene1',
+                panorama: masterUrl,
+                hotspots: []
+            };
+
+            renderCurrentScene();
+            renderSceneManager();
+            generateConfig(); // Initial JSON generation
+        }
+
+        /**
+         * Renders the current scene image and draws the hotspots using a reliable preloading method.
+         */
+        function renderCurrentScene() {
+            const currentScene = appState.scenes[appState.currentSceneId];
+            if (!currentScene) return;
+
+            // 1. Update UI and clear old markers
+            dom.currentSceneIdSpan.textContent = appState.currentSceneId;
+            dom.imgContainer.querySelectorAll('.hotspot-marker').forEach(m => m.remove());
+            
+            // 2. Show loading placeholder
+            showImagePlaceholder('Loading image...');
+
+            // 3. Create a dedicated Image object for preloading (Handles cache and load events reliably)
+            const imgLoader = new Image();
+
+            // --- Load Success Handler ---
+            imgLoader.onload = () => {
+                console.log(`Image loaded successfully: ${currentScene.panorama}`);
+                
+                // Remove placeholder and ensure container is styled correctly
+                dom.imgContainer.querySelector('.placeholder-text')?.remove();
+                dom.imgContainer.classList.remove('flex', 'items-center', 'justify-center');
+
+                // Set the DOM image src and make it visible
+                dom.interactiveImg.src = currentScene.panorama;
+                dom.interactiveImg.style.opacity = '1';
+                dom.interactiveImg.style.display = 'block';
+
+                // Draw markers now that the image dimensions are stable
+                currentScene.hotspots.forEach(hotspot => {
+                    const { clientWidth: w, clientHeight: imgHeight } = dom.interactiveImg;
+                    
+                    // Pannellum's coordinate mapping logic:
+                    // Convert Yaw (-180 to 180) to normalized X (0 to 1)
+                    const normalizedX = (Number(hotspot.yaw) + 180) / 360; 
+                    // Convert Pitch (-90 to 90) to normalized Y (0 to 1)
+                    const normalizedY = (90 - Number(hotspot.pitch)) / 180;
+                    
+                    const clickX = normalizedX * w;
+                    const clickY = normalizedY * imgHeight;
+                    
+                    addMarker(clickX, clickY, hotspot.text);
+                });
+            };
+
+            // --- Load Error Handler ---
+            imgLoader.onerror = (e) => {
+                console.error(`Error loading image from URL: ${currentScene.panorama}`, e);
+                showImagePlaceholder('IMAGE LOAD FAILED. Check the URL and ensure it is accessible.');
+                dom.interactiveImg.style.display = 'none'; // Ensure DOM image is hidden
+            };
+            
+            // 4. Start loading the image
+            imgLoader.src = currentScene.panorama;
+        }
+
+        function addMarker(x, y, text) {
+            const marker = document.createElement('div');
+            marker.className = 'hotspot-marker transition duration-300 hover:scale-125';
+            marker.style.left = `${x}px`;
+            marker.style.top = `${y}px`;
+            marker.title = text; // Tooltip
+            dom.imgContainer.appendChild(marker);
+        }
+
+        dom.imgContainer.addEventListener('click', function(event) {
+            if (dom.interactiveImg.style.display === 'none' || dom.interactiveImg.src === '') return;
+            
+            // 1. Get click coordinates
+            const containerRect = this.getBoundingClientRect();
+            const clickX = event.clientX - containerRect.left;
+            const clickY = event.clientY - containerRect.top;
+
+            // 2. Calculate normalized coordinates (0 to 1)
+            const img = dom.interactiveImg;
+            const normalizedX = clickX / img.clientWidth;
+            const normalizedY = clickY / img.clientHeight;
+
+            // 3. Convert to Pannellum spherical coordinates (Yaw, Pitch)
+            const yaw = (normalizedX * 360) - 180; 
+            const pitch = 90 - (normalizedY * 180);  
+            
+            appState.lastClickCoords = {
+                x: clickX,
+                y: clickY,
+                yaw: yaw.toFixed(4),
+                pitch: pitch.toFixed(4)
+            };
+
+            // 4. Open modal to configure link
+            openHotspotModal();
+        });
+
+        // --- Modal Control ---
+
+        function openHotspotModal() {
+            if (!appState.scenes[appState.currentSceneId]) {
+                console.error("Please load the master scene first.");
+                return;
+            }
+
+            dom.hotspotModal.style.display = 'flex';
+            dom.modalSourceScene.textContent = appState.currentSceneId;
+            
+            // Populate existing scenes dropdown
+            populateExistingSceneSelect();
+
+            // Reset modal fields
+            document.getElementById('hotspot-text').value = `Go to Scene ${Object.keys(appState.scenes).length + 1}`;
+            document.getElementById('target-action').value = 'new';
+            document.getElementById('new-scene-url').value = '';
+            toggleNewSceneInput('new');
+        }
+
+        function closeHotspotModal() {
+            dom.hotspotModal.style.display = 'none';
+            appState.lastClickCoords = null;
+        }
+
+        function toggleNewSceneInput(action) {
+            if (action === 'new') {
+                dom.newSceneFields.classList.remove('hidden');
+                dom.existingSceneFields.classList.add('hidden');
+            } else {
+                dom.newSceneFields.classList.add('hidden');
+                dom.existingSceneFields.classList.remove('hidden');
+            }
+        }
+        
+        function populateExistingSceneSelect() {
+            dom.existingSceneSelect.innerHTML = '<option value="">-- Select a Scene --</option>';
+            const scenes = Object.keys(appState.scenes);
+            scenes.forEach(id => {
+                if (id !== appState.currentSceneId) {
+                    const option = document.createElement('option');
+                    option.value = id;
+                    option.textContent = id;
+                    dom.existingSceneSelect.appendChild(option);
+                }
+            });
+        }
+
+        function saveHotspot() {
+            const currentScene = appState.scenes[appState.currentSceneId];
+            const coords = appState.lastClickCoords;
+            const hotspotText = document.getElementById('hotspot-text').value.trim();
+            const targetAction = document.getElementById('target-action').value;
+            
+            if (!currentScene || !coords || !hotspotText) {
+                console.error("Missing required data.");
+                return;
+            }
+
+            let targetSceneId;
+            
+            if (targetAction === 'new') {
+                const newSceneUrl = document.getElementById('new-scene-url').value.trim();
+                if (!newSceneUrl) {
+                    console.error("Please provide the URL for the new target image.");
+                    return;
+                }
+                
+                // Create new scene logic
+                targetSceneId = `scene${Object.keys(appState.scenes).length + 1}`;
+                
+                // 1. Create the new scene
+                appState.scenes[targetSceneId] = {
+                    id: targetSceneId,
+                    panorama: newSceneUrl,
+                    hotspots: []
+                };
+
+                // 2. Create the bidirectional (return) hotspot in the new scene
+                addReturnHotspot(targetSceneId, appState.currentSceneId, coords.yaw, coords.pitch);
+
+            } else { // existing
+                targetSceneId = dom.existingSceneSelect.value;
+                if (!targetSceneId) {
+                    console.error("Please select an existing target scene.");
+                    return;
+                }
+            }
+
+            // 3. Create the outgoing hotspot in the current scene
+            const newHotspot = {
+                // Ensure yaw and pitch are stored as JavaScript numbers
+                yaw: parseFloat(coords.yaw),
+                pitch: parseFloat(coords.pitch),
+                type: 'scene',
+                text: hotspotText,
+                sceneId: targetSceneId,
+            };
+
+            currentScene.hotspots.push(newHotspot);
+            
+            // 4. Update UI
+            renderCurrentScene();
+            renderSceneManager();
+            generateConfig();
+            closeHotspotModal();
+        }
+
+        function addReturnHotspot(targetSceneId, sourceSceneId, sourceYaw, sourcePitch) {
+            // Calculate the yaw 180 degrees opposite the entry point
+            let returnYaw = parseFloat(sourceYaw) + 180;
+            if (returnYaw > 180) {
+                returnYaw -= 360;
+            } else if (returnYaw < -180) {
+                returnYaw += 360;
+            }
+
+            const returnHotspot = {
+                // Ensure yaw and pitch are stored as JavaScript numbers
+                yaw: parseFloat(returnYaw.toFixed(4)),
+                pitch: parseFloat(sourcePitch),
+                type: 'scene',
+                text: `Return to ${sourceSceneId}`,
+                sceneId: sourceSceneId,
+            };
+
+            appState.scenes[targetSceneId].hotspots.push(returnHotspot);
+            // Non-blocking feedback
+            console.log(`New scene (${targetSceneId}) created and return hotspot added automatically!`);
+        }
+
+        // --- UI Rendering ---
+
+        function renderSceneManager() {
+            const sceneIds = Object.keys(appState.scenes);
+            dom.sceneManager.innerHTML = '';
+            
+            if (sceneIds.length === 0) {
+                dom.sceneManager.innerHTML = '<p id="scene-placeholder" class="text-gray-500">No scenes loaded yet.</p>';
+                return;
+            }
+
+            sceneIds.forEach(sceneId => {
+                const scene = appState.scenes[sceneId];
+                const hotspotCount = scene.hotspots.length;
+                
+                const sceneDiv = document.createElement('div');
+                sceneDiv.className = `p-3 rounded-lg border shadow-sm transition duration-150 ${sceneId === appState.currentSceneId ? 'bg-blue-100 border-blue-400' : 'bg-white border-gray-200'}`;
+                
+                sceneDiv.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="font-bold text-lg text-gray-800">${sceneId.toUpperCase()}</h4>
+                        <button onclick="switchToScene('${sceneId}')" class="text-sm bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md">
+                            ${sceneId === appState.currentSceneId ? 'Current Scene' : 'Edit Hotspots'}
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-600 truncate mb-2">Image: ${scene.panorama}</p>
+                    <p class="text-sm">Hotspots defined: <span class="font-semibold text-red-500">${hotspotCount}</span></p>
+                `;
+                dom.sceneManager.appendChild(sceneDiv);
+            });
+        }
+        
+        window.switchToScene = function(sceneId) {
+            appState.currentSceneId = sceneId;
+            renderCurrentScene();
+            renderSceneManager();
+        }
+
+        // --- Reset Logic ---
+
+        window.resetAllSettings = function() {
+            appState.scenes = {};
+            appState.currentSceneId = 'scene1';
+            appState.configUrl = '';
+            appState.lastClickCoords = null;
+            
+            // Destroy viewer instance if active
+            if (appState.pannellumViewer) {
+                appState.pannellumViewer.destroy();
+                appState.pannellumViewer = null;
+            }
+
+            // Reset input fields to defaults/empty
+            document.getElementById('masterImageUrl').value = "https://pannellum.org/images/alma.jpg";
+            document.getElementById('configUrl').value = '';
+            
+            // Clear output areas
+            dom.configOutput.textContent = "Click 'Generate JSON' to see the configuration here.";
+            dom.iframeOutput.value = '';
+            dom.iframeOutputContainer.classList.add('hidden');
+
+            // Reset UI components
+            renderSceneManager();
+            showImagePlaceholder();
+            dom.currentSceneIdSpan.textContent = 'scene1';
+            
+            console.log("Hotspot configuration has been reset.");
+        }
+
+
+        // --- JSON Generation and Download (Production Ready) ---
+
+        /**
+         * Generates the Pannellum configuration object.
+         * IMPORTANT: Ensures hotspot coordinates are explicitly numbers for correct JSON output.
+         * @returns {object} The configuration object.
+         */
+        function generatePannellumConfig() {
+            const scenesConfig = {};
+            for (const id in appState.scenes) {
+                const scene = appState.scenes[id];
+                
+                // Format the hotspots for JSON output
+                const formattedHotspots = scene.hotspots.map(h => ({
+                    // CRITICAL: Ensure pitch/yaw are numeric types for JSON
+                    pitch: Number(h.pitch),
+                    yaw: Number(h.yaw),
+                    type: h.type,
+                    text: h.text,
+                    sceneId: h.sceneId, 
+                }));
+                
+                scenesConfig[id] = {
+                    type: "equirectangular",
+                    panorama: scene.panorama,
+                    hotspots: formattedHotspots
+                };
+            }
+            
+            const config = {
+                "default": {
+                    "firstScene": "scene1",
+                    "author": "Pannellum Hotspot Generator Tool",
+                    "autoLoad": true,
+                    "compass": true,
+                    "sceneFadeDuration": 1000,
+                    "showZoom": false
+                },
+                "scenes": scenesConfig
+            };
+            
+            return config; 
+        }
+
+        function generateConfig() {
+            // Only block if NO master scene has been loaded at all
+            if (Object.keys(appState.scenes).length === 0) {
+                dom.configOutput.textContent = "Configuration not generated: No master scene has been loaded yet. Load the master scene first.";
+                return;
+            }
+            const configObject = generatePannellumConfig();
+            dom.configOutput.textContent = JSON.stringify(configObject, null, 4);
+        }
+
+        function downloadConfig() {
+            // Only block if NO master scene has been loaded at all
+            if (Object.keys(appState.scenes).length === 0) {
+                console.error("No master scene loaded to download config.json.");
+                return;
+            }
+
+            try {
+                const configObject = generatePannellumConfig();
+                const configJsonString = JSON.stringify(configObject, null, 4);
+                
+                // Create a Blob containing the JSON data
+                const blob = new Blob([configJsonString], { type: 'application/json' });
+                
+                // Create a temporary link element for download
+                const a = document.createElement('a');
+                a.download = 'config.json';
+                a.href = URL.createObjectURL(blob);
+                a.click();
+                URL.revokeObjectURL(a.href);
+            } catch (e) {
+                console.error("Error generating or downloading JSON:", e);
+            }
+        }
+
+        // --- Live Preview Logic ---
+
+        function showPreviewModal() {
+            // Check 1: Ensure Pannellum library is loaded
+            if (typeof pannellum === 'undefined') {
+                console.error("Pannellum library is not loaded. Cannot run preview.");
+                return;
+            }
+
+            // Only block if NO master scene has been loaded at all
+            if (Object.keys(appState.scenes).length === 0) {
+                console.error("Live Preview requires a master scene to be loaded.");
+                return;
+            }
+
+            // 1. Get the current configuration object
+            const configObject = generatePannellumConfig();
+            
+            // 2. Destroy previous viewer instance if it exists
+            if (appState.pannellumViewer) {
+                appState.pannellumViewer.destroy();
+                appState.pannellumViewer = null;
+            }
+
+            // 3. Show the modal
+            dom.previewModal.style.display = 'flex';
+
+            // 4. Initialize the viewer directly using the config object
+            // Use setTimeout to ensure the DOM element is fully visible before initializing Pannellum
+            setTimeout(() => {
+                // **CRITICAL FIX:** Clear the container's contents before initialization
+                dom.pannellumViewerDiv.innerHTML = ''; 
+                
+                appState.pannellumViewer = pannellum.viewer(dom.pannellumViewerDiv.id, configObject);
+            }, 50); 
+        }
+
+        function closePreviewModal() {
+            dom.previewModal.style.display = 'none';
+            // Destroy the viewer instance to prevent memory leaks and conflicts
+            if (appState.pannellumViewer) {
+                appState.pannellumViewer.destroy();
+                appState.pannellumViewer = null;
+            }
+        }
+
+        // --- Iframe Code Generation Logic ---
+
+        function showIframeCode() {
+            // Only block if NO master scene has been loaded at all
+            if (Object.keys(appState.scenes).length === 0) {
+                dom.iframeOutput.value = "ERROR: Iframe code generation skipped. You must first load the master scene to define the configuration structure.";
+                dom.iframeOutputContainer.classList.remove('hidden');
+                return;
+            }
+            
+            // Check 2: Must have a hosting URL for the config file
+            const configUrl = document.getElementById('configUrl').value.trim();
+            if (!configUrl) {
+                console.error("Please enter a Config.json Hosting URL to generate the external iframe code.");
+                dom.iframeOutput.value = "ERROR: Please fill in the 'Config.json Hosting URL' field and click 'Generate config.json' before generating this code. This URL must point to a publicly accessible host where you have uploaded the config.json file.";
+                dom.iframeOutputContainer.classList.remove('hidden');
+                return;
+            }
+
+            // Use the HTM URL provided in the input, defaulting to the CDN if the input is empty
+            const htmUrl = dom.htmUrlInput.value || 'https://cdn.pannellum.org/2.5/pannellum.htm';
+            
+            // The external iframe approach requires the pannellum.htm wrapper file
+            const iframeSrc = `${htmUrl}#config=${encodeURIComponent(configUrl)}`;
+
+            const iframeCode = `<iframe width="600" height="400" allowfullscreen style="border-style:none;" src="${iframeSrc}"></iframe>`;
+
+            dom.iframeOutput.value = iframeCode;
+            dom.iframeOutputContainer.classList.remove('hidden');
+        }
+
+        function copyIframeCode() {
+            // Note: Using the deprecated execCommand as navigator.clipboard.writeText is often restricted in iframes
+            const textarea = dom.iframeOutput;
+            textarea.select();
+            document.execCommand('copy');
+            console.log('Iframe code copied to clipboard!');
+        }
+        
+        // --- Initialization ---
+        window.onload = function() {
+            renderSceneManager();
+            showImagePlaceholder(); 
+        };
+    </script>
+</body>
+</html>
+
